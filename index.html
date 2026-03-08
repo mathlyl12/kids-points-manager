@@ -552,15 +552,16 @@
         </div>
     </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.7.2/browser/cloudbase.full.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // CloudBase 配置
-        const app = cloudbase.init({
-            env: 'ai-native-4g0rtz9rbc334032'
-        });
+        // Supabase 配置
+        const SUPABASE_URL = 'https://jjapnufndavlbtmqyufn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXBudWZuZGF2bGJ0bXF5dWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDk3OTMsImV4cCI6MjA4ODUyNTc5M30.yXciuHKpUe2PumtLCDGiCf-SepQqoHBTmPloXizwpbI';
 
-        const auth = app.auth({ persistence: 'local' });
-        const db = app.database();
+        // 使用 window.supabase 全局对象创建客户端
+        // 避免使用 'supabase' 作为变量名以防止与全局对象冲突
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         let currentUser = null;
         let currentKidId = null;
         let currentAction = null;
@@ -568,40 +569,8 @@
         // 初始化
         async function init() {
             console.log('应用初始化...');
-            try {
-                const loginState = await auth.getLoginState();
-                console.log('登录状态:', loginState);
-                
-                if (loginState && loginState.user) {
-                    currentUser = loginState.user;
-                    console.log('已登录,用户ID:', currentUser.uid);
-
-                    // 从localStorage读取保存的昵称
-                    const savedNickname = localStorage.getItem('user_nickname_' + currentUser.uid);
-                    if (savedNickname) {
-                        currentUser.nickname = savedNickname;
-                    }
-
-                    // 确保有昵称
-                    currentUser.user_metadata = currentUser.user_metadata || {};
-                    if (!currentUser.user_metadata.nickname) {
-                        if (currentUser.nickname) {
-                            currentUser.user_metadata.nickname = currentUser.nickname;
-                        } else {
-                            currentUser.user_metadata.nickname = '家长';
-                        }
-                    }
-
-                    showMain();
-                    loadKids();
-                } else {
-                    console.log('未登录，显示登录界面');
-                    showLogin();
-                }
-            } catch (err) {
-                console.error('初始化异常:', err);
-                showLogin();
-            }
+            // 直接显示登录界面，让用户输入昵称
+            showLogin();
         }
 
         // 匿名登录
@@ -614,35 +583,15 @@
             }
 
             try {
-                console.log('匿名登录,昵称:', nickname);
+                console.log('登录,昵称:', nickname);
 
-                // 先检查是否已有登录状态
-                const loginState = await auth.getLoginState();
-                if (loginState && loginState.user) {
-                    currentUser = loginState.user;
-                    console.log('已有登录,用户ID:', currentUser.uid);
-                } else {
-                    // 进行匿名登录
-                    const result = await auth.anonymousAuthProvider().signIn();
-                    console.log('匿名登录结果:', result);
-
-                    if (result.code) {
-                        alert('登录失败: ' + result.message);
-                        return;
-                    }
-
-                    currentUser = result.user;
-                    console.log('匿名登录成功,用户ID:', currentUser.uid);
-                }
-
-                // 设置昵称
-                currentUser.user_metadata = currentUser.user_metadata || {};
-                currentUser.user_metadata.nickname = nickname;
-
+                // 使用昵称作为用户标识
+                currentUser = { id: nickname, nickname: nickname };
+                
                 // 保存昵称到localStorage
-                localStorage.setItem('user_nickname_' + currentUser.uid, nickname);
+                localStorage.setItem('user_nickname', nickname);
 
-                console.log('登录成功,用户ID:', currentUser.uid, '昵称:', nickname);
+                console.log('登录成功,昵称:', nickname);
 
                 showMain();
                 loadKids();
@@ -652,7 +601,6 @@
             }
         }
 
-        // 匿名登录
         // 显示登录界面
         function showLogin() {
             document.getElementById('loginSection').style.display = 'block';
@@ -664,8 +612,7 @@
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainSection').style.display = 'block';
 
-            // 更新用户信息
-            const nickname = currentUser.user_metadata?.nickname || '家长';
+            const nickname = currentUser?.nickname || '家长';
             document.getElementById('userName').textContent = nickname;
             document.getElementById('userAvatar').textContent = nickname.charAt(0);
             document.getElementById('displayUsername').textContent = nickname;
@@ -675,14 +622,8 @@
         // 退出登录
         async function logout() {
             if (!confirm('确定要退出登录吗？')) return;
-
-            const result = await auth.signOut();
-            if (result.code) {
-                alert('退出失败: ' + result.message);
-                return;
-            }
-
             currentUser = null;
+            localStorage.removeItem('user_nickname');
             showLogin();
         }
 
@@ -693,31 +634,31 @@
             document.getElementById('emptyState').style.display = 'none';
 
             try {
-                // 优先使用昵称作为标识，否则使用uid
-                const parentId = currentUser.nickname || currentUser.uid;
+                const parentId = currentUser.nickname;
                 console.log('开始查询数据库，parentId:', parentId);
                 
-                const result = await db.collection('kids')
-                    .where({ parentId: parentId })
-                    .orderBy('createdAt', 'desc')
-                    .get();
+                const { data, error } = await db
+                    .from('kids')
+                    .select('*')
+                    .eq('parent_id', parentId)
+                    .order('created_at', { ascending: false });
 
-                console.log('数据库查询结果:', result);
+                console.log('数据库查询结果:', data, error);
 
                 document.getElementById('loading').style.display = 'none';
 
-                if (result.code) {
-                    console.error('加载失败 - code:', result.code, 'message:', result.message);
-                    alert('加载失败: ' + result.message);
+                if (error) {
+                    console.error('加载失败:', error);
+                    alert('加载失败: ' + error.message);
                     return;
                 }
 
-                if (!result.data || result.data.length === 0) {
+                if (!data || data.length === 0) {
                     document.getElementById('emptyState').style.display = 'block';
                     return;
                 }
 
-                renderKids(result.data);
+                renderKids(data);
             } catch (err) {
                 document.getElementById('loading').style.display = 'none';
                 console.error('加载异常:', err);
@@ -736,13 +677,13 @@
                             <div class="kid-name">${escapeHtml(kid.name)}</div>
                             <div class="parent-name">当前积分</div>
                         </div>
-                        <div class="kid-points">${kid.totalPoints}分</div>
+                        <div class="kid-points">${kid.total_points}分</div>
                     </div>
                     <div class="kid-actions">
-                        <button class="action-btn add-points" onclick="openPointsModal('${kid._id}', 'add')">➕ 加分</button>
-                        <button class="action-btn subtract-points" onclick="openPointsModal('${kid._id}', 'subtract')">➖ 减分</button>
-                        <button class="action-btn exchange-points" onclick="openPointsModal('${kid._id}', 'exchange')">🎁 兑换积分</button>
-                        <button class="action-btn history-btn" onclick="openHistoryModal('${kid._id}')">📜 历史记录</button>
+                        <button class="action-btn add-points" onclick="openPointsModal('${kid.id}', 'add')">➕ 加分</button>
+                        <button class="action-btn subtract-points" onclick="openPointsModal('${kid.id}', 'subtract')">➖ 减分</button>
+                        <button class="action-btn exchange-points" onclick="openPointsModal('${kid.id}', 'exchange')">🎁 兑换积分</button>
+                        <button class="action-btn history-btn" onclick="openHistoryModal('${kid.id}')">📜 历史记录</button>
                     </div>
                 </div>
             `).join('');
@@ -765,38 +706,35 @@
                 return;
             }
 
-            // 优先使用昵称作为标识
-            const parentId = currentUser.nickname || currentUser.uid;
+            const parentId = currentUser.nickname;
             console.log('当前用户:', currentUser);
             console.log('使用的parentId:', parentId);
             
-            const kid = {
-                name: name,
-                totalPoints: initialPoints,
-                parentId: parentId,
-                createdAt: new Date(),
-                history: initialPoints > 0 ? [{
-                    type: 'add',
-                    points: initialPoints,
-                    reason: '初始积分',
-                    parentName: currentUser.user_metadata?.nickname || '家长',
-                    time: new Date().toLocaleString('zh-CN')
-                }] : []
-            };
+            const history = initialPoints > 0 ? [{
+                type: 'add',
+                points: initialPoints,
+                reason: '初始积分',
+                parentName: currentUser.nickname || '家长',
+                time: new Date().toLocaleString('zh-CN')
+            }] : [];
 
             try {
-                console.log('开始添加数据:', kid);
-                console.log('db对象:', db);
-                console.log('db.collection:', db.collection);
+                console.log('开始添加数据:', { name, total_points: initialPoints, parent_id: parentId });
                 
-                const result = await db.collection('kids').add(kid);
-                console.log('添加结果:', result);
-                console.log('添加结果code:', result.code);
-                console.log('添加结果message:', result.message);
-                console.log('添加结果id:', result.id);
+                const { data, error } = await db
+                    .from('kids')
+                    .insert({
+                        name: name,
+                        total_points: initialPoints,
+                        parent_id: parentId,
+                        history: history
+                    })
+                    .select();
 
-                if (result.code) {
-                    alert('添加失败: ' + result.message);
+                console.log('添加结果:', data, error);
+
+                if (error) {
+                    alert('添加失败: ' + error.message);
                     return;
                 }
 
@@ -804,7 +742,6 @@
                 loadKids();
             } catch (err) {
                 console.error('添加失败:', err);
-                console.error('错误详情:', JSON.stringify(err));
                 alert('添加失败: ' + err.message);
             }
         }
@@ -845,7 +782,7 @@
         // 确认积分操作
         async function confirmPoints() {
             const kidId = currentKidId;
-            const parentName = document.getElementById('parentName').value.trim() || currentUser.user_metadata?.nickname || '家长';
+            const parentName = document.getElementById('parentName').value.trim() || currentUser?.nickname || '家长';
             const points = parseInt(document.getElementById('pointsAmount').value) || 0;
             const reason = document.getElementById('pointsReason').value.trim();
 
@@ -856,17 +793,21 @@
 
             // 先查询当前积分
             console.log('查询小朋友数据，ID:', kidId);
-            const queryResult = await db.collection('kids').doc(kidId).get();
-            console.log('查询结果:', queryResult);
+            const { data: kids, error: queryError } = await db
+                .from('kids')
+                .select('*')
+                .eq('id', kidId);
             
-            if (queryResult.code || !queryResult.data || queryResult.data.length === 0) {
-                alert('查询失败: ' + (queryResult.message || '未知错误'));
+            console.log('查询结果:', kids, queryError);
+            
+            if (queryError || !kids || kids.length === 0) {
+                alert('查询失败: ' + (queryError?.message || '未知错误'));
                 return;
             }
 
-            const kid = queryResult.data[0];
+            const kid = kids[0];
 
-            if ((currentAction === 'subtract' || currentAction === 'exchange') && points > kid.totalPoints) {
+            if ((currentAction === 'subtract' || currentAction === 'exchange') && points > kid.total_points) {
                 alert('积分不足');
                 return;
             }
@@ -889,7 +830,7 @@
                 actionText = '兑换';
             }
 
-            const newTotalPoints = kid.totalPoints + pointChange;
+            const newTotalPoints = kid.total_points + pointChange;
             const newHistory = [...(kid.history || []), {
                 type: type,
                 points: points,
@@ -899,15 +840,19 @@
             }];
 
             try {
-                console.log('更新数据:', { totalPoints: newTotalPoints, historyLength: newHistory.length });
-                const result = await db.collection('kids').doc(kidId).update({
-                    totalPoints: newTotalPoints,
-                    history: newHistory
-                });
-                console.log('更新结果:', result);
+                console.log('更新数据:', { total_points: newTotalPoints, historyLength: newHistory.length });
+                const { error: updateError } = await db
+                    .from('kids')
+                    .update({
+                        total_points: newTotalPoints,
+                        history: newHistory
+                    })
+                    .eq('id', kidId);
 
-                if (result.code) {
-                    alert('操作失败: ' + result.message);
+                console.log('更新结果:', updateError);
+
+                if (updateError) {
+                    alert('操作失败: ' + updateError.message);
                     return;
                 }
 
@@ -926,13 +871,17 @@
 
         // 打开历史记录弹窗
         async function openHistoryModal(kidId) {
-            const result = await db.collection('kids').doc(kidId).get();
-            if (result.code || !result.data || result.data.length === 0) {
-                alert('查询失败: ' + (result.message || '未知错误'));
+            const { data: kids, error } = await db
+                .from('kids')
+                .select('*')
+                .eq('id', kidId);
+                
+            if (error || !kids || kids.length === 0) {
+                alert('查询失败: ' + (error?.message || '未知错误'));
                 return;
             }
 
-            const kid = result.data[0];
+            const kid = kids[0];
             const historyList = document.getElementById('historyList');
 
             if (!kid.history || kid.history.length === 0) {
