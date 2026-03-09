@@ -91,23 +91,27 @@
             cursor: pointer;
         }
 
-        .add-kid-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            transition: transform 0.2s;
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        .add-kid-btn:active {
-            transform: scale(0.98);
+        .action-btn-small {
+            border: none;
+            border-radius: 15px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .action-btn-small.add-kid-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .action-btn-small.link-kid-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
         .kid-card {
@@ -143,8 +147,13 @@
         .kid-actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 15px;
+        }
+
+        .kid-actions .action-btn:nth-child(4),
+        .kid-actions .action-btn:nth-child(5) {
+            grid-column: span 1;
         }
 
         .action-btn {
@@ -180,7 +189,29 @@
         .history-btn {
             background: #9C27B0;
             color: white;
-            grid-column: span 2;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
         }
 
         .modal {
@@ -468,10 +499,12 @@
                         <div style="font-size: 12px; color: #999;">昵称: <span id="displayUsername">-</span></div>
                     </div>
                 </div>
-                <button class="logout-btn" onclick="logout()">退出</button>
+                <div class="user-actions">
+                    <button class="action-btn-small add-kid-btn" onclick="openAddKidModal()">➕ 添加</button>
+                    <button class="action-btn-small link-kid-btn" onclick="openLinkKidModal()">🔗 关联</button>
+                    <button class="logout-btn" onclick="logout()">退出</button>
+                </div>
             </div>
-
-            <button class="add-kid-btn" onclick="openAddKidModal()">➕ 添加小朋友</button>
 
             <div id="kidsList">
                 <!-- 小朋友列表将在这里渲染 -->
@@ -503,9 +536,46 @@
                 <label class="form-label">初始积分</label>
                 <input type="number" class="form-input" id="initialPoints" value="0" min="0">
             </div>
+            <div class="form-group">
+                <label class="form-label">关联码 (6位数字)</label>
+                <input type="text" class="form-input" id="kidCode" placeholder="用于让其他家长关联此小朋友" maxlength="6">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">请记住此关联码，分享给其他家长</p>
+            </div>
             <div class="btn-group">
                 <button class="btn btn-secondary" onclick="closeModal('addKidModal')">取消</button>
                 <button class="btn btn-primary" onclick="addKid()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关联小朋友弹窗 -->
+    <div class="modal" id="linkKidModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">关联小朋友</div>
+                <button class="close-btn" onclick="closeModal('linkKidModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">请选择要关联的小朋友</label>
+                <select class="form-input" id="linkKidSelect" onchange="onKidSelectChange()">
+                    <option value="">-- 请选择 --</option>
+                </select>
+            </div>
+            <div id="linkKidCodeSection" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">请输入 <span id="linkKidNameDisplay" style="font-weight: bold;"></span> 的关联码</label>
+                    <input type="text" class="form-input" id="linkKidCode" placeholder="请输入6位关联码" maxlength="6">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal('linkKidModal')">取消</button>
+                    <button class="btn btn-primary" onclick="confirmLinkKid()">确认关联</button>
+                </div>
+            </div>
+            <div id="linkKidHint" style="display: none;">
+                <p style="font-size: 12px; color: #999; margin-bottom: 15px;">请向添加小朋友的家长获取关联码</p>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal('linkKidModal')">取消</button>
+                </div>
             </div>
         </div>
     </div>
@@ -549,6 +619,22 @@
             <ul class="history-list" id="historyList">
                 <!-- 历史记录将在这里渲染 -->
             </ul>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div class="modal" id="deleteKidModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">确认删除</div>
+                <button class="close-btn" onclick="closeModal('deleteKidModal')">×</button>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p style="margin-bottom: 20px; font-size: 16px;">确定要删除 <strong id="deleteKidName" style="color: #e74c3c;"></strong> 吗？</p>
+                <p style="color: #999; font-size: 14px; margin-bottom: 20px;">此操作不可恢复，所有积分历史将被删除</p>
+                <button class="btn btn-danger" style="width: 100%; margin-bottom: 10px;" onclick="deleteKid()">确认删除</button>
+                <button class="btn" style="width: 100%;" onclick="closeModal('deleteKidModal')">取消</button>
+            </div>
         </div>
     </div>
 
@@ -683,7 +769,8 @@
                         <button class="action-btn add-points" onclick="openPointsModal('${kid.id}', 'add')">➕ 加分</button>
                         <button class="action-btn subtract-points" onclick="openPointsModal('${kid.id}', 'subtract')">➖ 减分</button>
                         <button class="action-btn exchange-points" onclick="openPointsModal('${kid.id}', 'exchange')">🎁 兑换积分</button>
-                        <button class="action-btn history-btn" onclick="openHistoryModal('${kid.id}')">📜 历史记录</button>
+                        <button class="action-btn history-btn" onclick="openHistoryModal('${kid.id}')">📜 历史</button>
+                        <button class="action-btn delete-btn" onclick="confirmDeleteKid('${kid.id}', '${escapeHtml(kid.name)}')">🗑️ 删除</button>
                     </div>
                 </div>
             `).join('');
@@ -693,6 +780,7 @@
         function openAddKidModal() {
             document.getElementById('kidName').value = '';
             document.getElementById('initialPoints').value = '0';
+            document.getElementById('kidCode').value = '';
             document.getElementById('addKidModal').classList.add('active');
         }
 
@@ -700,9 +788,16 @@
         async function addKid() {
             const name = document.getElementById('kidName').value.trim();
             const initialPoints = parseInt(document.getElementById('initialPoints').value) || 0;
+            const kidCode = document.getElementById('kidCode').value.trim();
 
             if (!name) {
                 alert('请输入小朋友的名字');
+                return;
+            }
+
+            // 验证关联码
+            if (kidCode && (kidCode.length !== 6 || !/^\d{6}$/.test(kidCode))) {
+                alert('关联码必须是6位数字');
                 return;
             }
 
@@ -719,7 +814,7 @@
             }] : [];
 
             try {
-                console.log('开始添加数据:', { name, total_points: initialPoints, parent_id: parentId });
+                console.log('开始添加数据:', { name, total_points: initialPoints, parent_id: parentId, kid_code: kidCode });
                 
                 const { data, error } = await db
                     .from('kids')
@@ -727,7 +822,8 @@
                         name: name,
                         total_points: initialPoints,
                         parent_id: parentId,
-                        history: history
+                        history: history,
+                        kid_code: kidCode || null
                     })
                     .select();
 
@@ -739,10 +835,163 @@
                 }
 
                 closeModal('addKidModal');
+                
+                // 清空表单
+                document.getElementById('kidName').value = '';
+                document.getElementById('initialPoints').value = '0';
+                document.getElementById('kidCode').value = '';
+                
+                if (kidCode) {
+                    alert('添加成功！关联码是：' + kidCode + '，请将此码告诉其他家长');
+                } else {
+                    alert('添加成功！');
+                }
                 loadKids();
             } catch (err) {
                 console.error('添加失败:', err);
                 alert('添加失败: ' + err.message);
+            }
+        }
+
+        // 打开关联小朋友弹窗
+        let linkKidId = null;
+
+        async function openLinkKidModal() {
+            // 重置状态
+            document.getElementById('linkKidCode').value = '';
+            document.getElementById('linkKidCodeSection').style.display = 'none';
+            document.getElementById('linkKidHint').style.display = 'block';
+            linkKidId = null;
+            
+            // 查询所有设置了关联码且不属于当前用户的小朋友
+            const parentId = currentUser.nickname;
+            
+            try {
+                const { data: allKids, error } = await db
+                    .from('kids')
+                    .select('*')
+                    .not('kid_code', 'is', null)
+                    .neq('parent_id', parentId);
+                
+                if (error) {
+                    alert('查询失败: ' + error.message);
+                    return;
+                }
+                
+                const select = document.getElementById('linkKidSelect');
+                select.innerHTML = '<option value="">-- 请选择 --</option>';
+                
+                if (allKids && allKids.length > 0) {
+                    allKids.forEach(kid => {
+                        const option = document.createElement('option');
+                        option.value = kid.id;
+                        option.textContent = kid.name;
+                        select.appendChild(option);
+                    });
+                    document.getElementById('linkKidHint').style.display = 'block';
+                } else {
+                    document.getElementById('linkKidHint').innerHTML = '<p style="font-size: 12px; color: #999; margin-bottom: 15px;">暂无可关联的小朋友</p><div class="btn-group"><button class="btn btn-secondary" onclick="closeModal(\'linkKidModal\')">关闭</button></div>';
+                    document.getElementById('linkKidHint').style.display = 'block';
+                }
+                
+                document.getElementById('linkKidModal').classList.add('active');
+                
+            } catch (err) {
+                console.error('查询失败:', err);
+                alert('查询失败: ' + err.message);
+            }
+        }
+
+        // 选择小朋友后直接显示关联码填写框
+        function onKidSelectChange() {
+            const select = document.getElementById('linkKidSelect');
+            const kidId = select.value;
+            
+            if (!kidId) {
+                document.getElementById('linkKidCodeSection').style.display = 'none';
+                document.getElementById('linkKidHint').style.display = 'block';
+                linkKidId = null;
+                return;
+            }
+            
+            linkKidId = kidId;
+            const kidName = select.options[select.selectedIndex].textContent;
+            
+            document.getElementById('linkKidNameDisplay').textContent = kidName;
+            document.getElementById('linkKidCode').value = '';
+            document.getElementById('linkKidHint').style.display = 'none';
+            document.getElementById('linkKidCodeSection').style.display = 'block';
+        }
+
+        // 确认关联
+        async function confirmLinkKid() {
+            const linkCode = document.getElementById('linkKidCode').value.trim();
+            
+            if (!linkCode) {
+                alert('请输入关联码');
+                return;
+            }
+            
+            if (linkCode.length !== 6 || !/^\d{6}$/.test(linkCode)) {
+                alert('关联码必须是6位数字');
+                return;
+            }
+            
+            if (!linkKidId) {
+                alert('请先选择小朋友');
+                return;
+            }
+            
+            const parentId = currentUser.nickname;
+            
+            try {
+                // 查找选择的小朋友并验证关联码
+                const { data: kids, error: searchError } = await db
+                    .from('kids')
+                    .select('*')
+                    .eq('id', linkKidId);
+                
+                if (searchError) {
+                    alert('查询失败: ' + searchError.message);
+                    return;
+                }
+                
+                if (!kids || kids.length === 0) {
+                    alert('未找到该小朋友');
+                    return;
+                }
+                
+                const kid = kids[0];
+                
+                // 验证关联码
+                if (kid.kid_code !== linkCode) {
+                    alert('关联码错误，请检查后重新输入');
+                    return;
+                }
+                
+                // 更新 parent_id
+                const { error: updateError } = await db
+                    .from('kids')
+                    .update({ parent_id: parentId })
+                    .eq('id', kid.id);
+                
+                if (updateError) {
+                    alert('关联失败: ' + updateError.message);
+                    return;
+                }
+                
+                closeModal('linkKidModal');
+                document.getElementById('linkKidCode').value = '';
+                document.getElementById('linkKidCodeSection').style.display = 'none';
+                document.getElementById('linkKidHint').style.display = 'block';
+                linkKidId = null;
+                
+                loadKids();
+                alert('关联成功！现在您可以管理 ' + kid.name + ' 了');
+                
+            } catch (err) {
+                console.error('关联失败:', err);
+                alert('关联失败: ' + err.message);
             }
         }
 
@@ -866,6 +1115,44 @@
             } catch (err) {
                 console.error('操作失败:', err);
                 alert('操作失败: ' + err.message);
+            }
+        }
+
+        // 删除小朋友相关变量
+        let kidToDeleteId = null;
+
+        // 打开删除确认弹窗
+        function confirmDeleteKid(kidId, kidName) {
+            kidToDeleteId = kidId;
+            document.getElementById('deleteKidName').textContent = kidName;
+            document.getElementById('deleteKidModal').classList.add('active');
+        }
+
+        // 删除小朋友
+        async function deleteKid() {
+            if (!kidToDeleteId) {
+                alert('删除失败：未找到要删除的小朋友');
+                return;
+            }
+
+            try {
+                const { error: deleteError } = await db
+                    .from('kids')
+                    .delete()
+                    .eq('id', kidToDeleteId);
+
+                if (deleteError) {
+                    alert('删除失败: ' + deleteError.message);
+                    return;
+                }
+
+                closeModal('deleteKidModal');
+                loadKids();
+                alert('删除成功');
+                kidToDeleteId = null;
+            } catch (err) {
+                console.error('删除失败:', err);
+                alert('删除失败: ' + err.message);
             }
         }
 
