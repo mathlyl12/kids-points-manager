@@ -383,6 +383,135 @@
             font-size: 16px;
         }
 
+        /* Tab 导航样式 */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: transparent;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 排行榜样式 */
+        .ranking-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            gap: 15px;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+        }
+
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%);
+        }
+
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
+        }
+
+        .rank-badge.rank-other {
+            background: #666;
+        }
+
+        .ranking-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .ranking-info {
+            flex: 1;
+        }
+
+        .ranking-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .ranking-points {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .ranking-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .ranking-empty-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
         .quick-points {
             display: flex;
             gap: 8px;
@@ -506,17 +635,38 @@
                 </div>
             </div>
 
-            <div id="kidsList">
-                <!-- 小朋友列表将在这里渲染 -->
+            <!-- Tab 导航 -->
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('kids')" id="tabKids">👶 我的小朋友</button>
+                <button class="tab-btn" onclick="switchTab('ranking')" id="tabRanking">🏆 积分排名</button>
             </div>
 
-            <div class="loading" id="loading">
-                加载中...
+            <!-- Tab 内容: 我的小朋友 -->
+            <div id="kidsTabContent" class="tab-content active">
+                <div id="kidsList">
+                    <!-- 小朋友列表将在这里渲染 -->
+                </div>
+
+                <div class="loading" id="loading">
+                    加载中...
+                </div>
+
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">👶</div>
+                    <div class="empty-state-text">还没有添加小朋友哦~</div>
+                </div>
             </div>
 
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-state-icon">👶</div>
-                <div class="empty-state-text">还没有添加小朋友哦~</div>
+            <!-- Tab 内容: 积分排名 -->
+            <div id="rankingTabContent" class="tab-content">
+                <div class="ranking-list" id="rankingList">
+                    <!-- 排名列表将在这里渲染 -->
+                </div>
+
+                <div class="ranking-empty" id="rankingEmpty" style="display: none;">
+                    <div class="ranking-empty-icon">📊</div>
+                    <div>暂无排名数据</div>
+                </div>
             </div>
         </div>
     </div>
@@ -750,6 +900,120 @@
                 console.error('加载异常:', err);
                 alert('加载失败: ' + err.message);
             }
+        }
+
+        // 切换 Tab
+        function switchTab(tab) {
+            // 切换按钮状态
+            document.getElementById('tabKids').classList.remove('active');
+            document.getElementById('tabRanking').classList.remove('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+
+            // 切换内容显示
+            document.getElementById('kidsTabContent').classList.remove('active');
+            document.getElementById('rankingTabContent').classList.remove('active');
+            document.getElementById(tab + 'TabContent').classList.add('active');
+
+            // 根据选择的 Tab 加载对应数据
+            if (tab === 'kids') {
+                loadKids();
+            } else if (tab === 'ranking') {
+                loadRanking();
+            }
+        }
+
+        // 排名缓存
+        let rankingCache = {
+            data: null,
+            timestamp: 0,
+            parentId: null
+        };
+        const CACHE_EXPIRE_MS = 30000; // 缓存30秒
+
+        // 加载积分排名
+        async function loadRanking(forceRefresh = false) {
+            const rankingList = document.getElementById('rankingList');
+            const rankingEmpty = document.getElementById('rankingEmpty');
+            
+            // 显示 loading
+            rankingList.innerHTML = '<div class="loading">加载中...</div>';
+            rankingEmpty.style.display = 'none';
+
+            try {
+                const parentId = currentUser.nickname;
+                const now = Date.now();
+
+                // 检查缓存是否有效（30秒内，且 parentId 相同）
+                if (!forceRefresh && 
+                    rankingCache.data && 
+                    rankingCache.parentId === parentId &&
+                    (now - rankingCache.timestamp) < CACHE_EXPIRE_MS) {
+                    console.log('使用缓存的排名数据');
+                    renderRanking(rankingCache.data);
+                    return;
+                }
+
+                console.log('开始查询排名数据，parentId:', parentId);
+
+                // 只查询需要的字段，提升性能
+                const { data, error } = await db
+                    .from('kids')
+                    .select('id, name, total_points')
+                    .eq('parent_id', parentId)
+                    .order('total_points', { ascending: false });
+
+                console.log('排名查询结果:', data, error);
+
+                if (error) {
+                    rankingList.innerHTML = '';
+                    console.error('加载排名失败:', error);
+                    alert('加载排名失败: ' + error.message);
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    rankingList.innerHTML = '';
+                    rankingEmpty.style.display = 'block';
+                    return;
+                }
+
+                // 更新缓存
+                rankingCache = {
+                    data: data,
+                    timestamp: now,
+                    parentId: parentId
+                };
+
+                renderRanking(data);
+            } catch (err) {
+                rankingList.innerHTML = '';
+                console.error('加载排名异常:', err);
+                alert('加载排名失败: ' + err.message);
+            }
+        }
+
+        // 渲染排名列表
+        function renderRanking(kids) {
+            const rankingList = document.getElementById('rankingList');
+
+            rankingList.innerHTML = kids.map((kid, index) => {
+                const rank = index + 1;
+                let rankClass = 'rank-other';
+                if (rank === 1) rankClass = 'rank-1';
+                else if (rank === 2) rankClass = 'rank-2';
+                else if (rank === 3) rankClass = 'rank-3';
+
+                return `
+                    <div class="ranking-item">
+                        <div class="rank-badge ${rankClass}">${rank}</div>
+                        <div class="ranking-avatar">${kid.name.charAt(0)}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-name">${kid.name}</div>
+                        </div>
+                        <div class="ranking-points">${kid.total_points} 分</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // 渲染小朋友列表
@@ -1108,6 +1372,11 @@
                 closeModal('pointsModal');
                 loadKids();
 
+                // 如果当前在排名页，也刷新排名（强制刷新缓存）
+                if (document.getElementById('tabRanking').classList.contains('active')) {
+                    loadRanking(true);
+                }
+
                 const message = type === 'add'
                     ? `已给 ${kid.name} 加 ${points} 分!`
                     : `已${actionText} ${points} 分!`;
@@ -1148,6 +1417,12 @@
 
                 closeModal('deleteKidModal');
                 loadKids();
+
+                // 如果当前在排名页，也刷新排名（强制刷新缓存）
+                if (document.getElementById('tabRanking').classList.contains('active')) {
+                    loadRanking(true);
+                }
+
                 alert('删除成功');
                 kidToDeleteId = null;
             } catch (err) {
