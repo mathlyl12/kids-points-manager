@@ -845,8 +845,22 @@
 
         // 显示主界面
         function showMain() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainSection').style.display = 'block';
+            const loginSection = document.getElementById('loginSection');
+            const mainSection = document.getElementById('mainSection');
+            
+            // 强制隐藏登录页
+            loginSection.style.display = 'none';
+            loginSection.style.visibility = 'hidden';
+            
+            // 强制显示主界面
+            mainSection.style.display = 'block';
+            mainSection.style.visibility = 'visible';
+            mainSection.style.opacity = '1';
+            
+            // 强制浏览器重新布局（解决 Android 兼容性问题）
+            mainSection.offsetHeight; // 触发重绘
+            
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
             const nickname = currentUser?.nickname || '家长';
             document.getElementById('userName').textContent = nickname;
