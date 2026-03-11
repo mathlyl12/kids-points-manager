@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>儿童积分管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 15px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-detail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .user-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .logout-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-btn-small {
+            border: none;
+            border-radius: 15px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .action-btn-small.add-kid-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .action-btn-small.link-kid-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .kid-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .kid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .kid-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .kid-points {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .kid-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .kid-actions .action-btn:nth-child(4),
+        .kid-actions .action-btn:nth-child(5) {
+            grid-column: span 1;
+        }
+
+        .action-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .add-points {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .subtract-points {
+            background: #ff9800;
+            color: white;
+        }
+
+        .exchange-points {
+            background: #2196F3;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .history-btn {
+            background: #9C27B0;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 25px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-action {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .history-reason {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .history-time {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .history-points {
+            font-weight: bold;
+            font-size: 18px;
+            margin-left: 10px;
+        }
+
+        .history-points.add {
+            color: #4CAF50;
+        }
+
+        .history-points.subtract {
+            color: #ff9800;
+        }
+
+        .history-points.exchange {
+            color: #2196F3;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #fff;
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        /* Tab 导航样式 */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: transparent;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 排行榜样式 */
+        .ranking-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            gap: 15px;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+        }
+
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%);
+        }
+
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
+        }
+
+        .rank-badge.rank-other {
+            background: #666;
+        }
+
+        .ranking-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .ranking-info {
+            flex: 1;
+        }
+
+        .ranking-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .ranking-points {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .ranking-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .ranking-empty-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .quick-points {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-point-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #f0f0f0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .quick-point-btn:active {
+            background: #e0e0e0;
+        }
+
+        .parent-name {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 50px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .login-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .login-type-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .login-type-btn.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- 登录界面 -->
+        <div id="loginSection" style="display: none;">
+            <div class="login-container">
+                <div class="login-title">🎯 儿童积分管理系统</div>
+                <p style="text-align: center; color: #666; margin-bottom: 30px; font-size: 14px;">记录孩子的成长,奖励每一个进步</p>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 60px; margin-bottom: 10px;">👨‍👩‍👧</div>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">输入昵称即可开始使用,数据自动同步到云端</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">您的昵称</label>
+                    <input type="text" class="form-input" id="nicknameInput" placeholder="请输入昵称(用于区分不同用户的数据)">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" style="font-size: 18px; padding: 15px;" onclick="anonymousLogin()">
+                        开始使用
+                    </button>
+                </div>
+                <p style="text-align: center; color: #999; margin-top: 15px; font-size: 12px;">
+                    数据将匿名存储到云端,请记住您的昵称以便下次访问
+                </p>
+            </div>
+        </div>
+
+        <!-- 主应用界面 -->
+        <div id="mainSection" style="display: none;">
+            <div class="header">
+                <h1>🎯 儿童积分管理</h1>
+                <p>记录孩子的成长,奖励每一个进步</p>
+            </div>
+
+            <div class="user-info">
+                <div class="user-detail">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div>
+                        <div class="user-name" id="userName">家长</div>
+                        <div style="font-size: 12px; color: #999;">昵称: <span id="displayUsername">-</span></div>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <button class="action-btn-small add-kid-btn" onclick="openAddKidModal()">➕ 添加</button>
+                    <button class="action-btn-small link-kid-btn" onclick="openLinkKidModal()">🔗 关联</button>
+                    <button class="logout-btn" onclick="logout()">退出</button>
+                </div>
+            </div>
+
+            <!-- Tab 导航 -->
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('kids')" id="tabKids">👶 我的小朋友</button>
+                <button class="tab-btn" onclick="switchTab('ranking')" id="tabRanking">🏆 积分排名</button>
+            </div>
+
+            <!-- Tab 内容: 我的小朋友 -->
+            <div id="kidsTabContent" class="tab-content active">
+                <div id="kidsList">
+                    <!-- 小朋友列表将在这里渲染 -->
+                </div>
+
+                <div class="loading" id="loading">
+                    加载中...
+                </div>
+
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">👶</div>
+                    <div class="empty-state-text">还没有添加小朋友哦~</div>
+                </div>
+            </div>
+
+            <!-- Tab 内容: 积分排名 -->
+            <div id="rankingTabContent" class="tab-content">
+                <div class="ranking-list" id="rankingList">
+                    <!-- 排名列表将在这里渲染 -->
+                </div>
+
+                <div class="ranking-empty" id="rankingEmpty" style="display: none;">
+                    <div class="ranking-empty-icon">📊</div>
+                    <div>暂无排名数据</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加小朋友弹窗 -->
+    <div class="modal" id="addKidModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">添加小朋友</div>
+                <button class="close-btn" onclick="closeModal('addKidModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">小朋友名字</label>
+                <input type="text" class="form-input" id="kidName" placeholder="请输入小朋友的名字">
+            </div>
+            <div class="form-group">
+                <label class="form-label">初始积分</label>
+                <input type="number" class="form-input" id="initialPoints" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">关联码 (6位数字)</label>
+                <input type="text" class="form-input" id="kidCode" placeholder="用于让其他家长关联此小朋友" maxlength="6">
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">请记住此关联码，分享给其他家长</p>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('addKidModal')">取消</button>
+                <button class="btn btn-primary" onclick="addKid()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关联小朋友弹窗 -->
+    <div class="modal" id="linkKidModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">关联小朋友</div>
+                <button class="close-btn" onclick="closeModal('linkKidModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">请选择要关联的小朋友</label>
+                <select class="form-input" id="linkKidSelect" onchange="onKidSelectChange()">
+                    <option value="">-- 请选择 --</option>
+                </select>
+            </div>
+            <div id="linkKidCodeSection" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">请输入 <span id="linkKidNameDisplay" style="font-weight: bold;"></span> 的关联码</label>
+                    <input type="text" class="form-input" id="linkKidCode" placeholder="请输入6位关联码" maxlength="6">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal('linkKidModal')">取消</button>
+                    <button class="btn btn-primary" onclick="confirmLinkKid()">确认关联</button>
+                </div>
+            </div>
+            <div id="linkKidHint" style="display: none;">
+                <p style="font-size: 12px; color: #999; margin-bottom: 15px;">请向添加小朋友的家长获取关联码</p>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="closeModal('linkKidModal')">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 积分操作弹窗 -->
+    <div class="modal" id="pointsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="pointsModalTitle">积分操作</div>
+                <button class="close-btn" onclick="closeModal('pointsModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">家长姓名</label>
+                <input type="text" class="form-input" id="parentName" placeholder="请输入您的姓名" value="">
+            </div>
+            <div class="form-group">
+                <label class="form-label">积分数量</label>
+                <input type="number" class="form-input" id="pointsAmount" value="1" min="1">
+            </div>
+            <div class="quick-points" id="quickPointsBtns">
+                <!-- 快捷积分按钮 -->
+            </div>
+            <div class="form-group">
+                <label class="form-label">原因</label>
+                <input type="text" class="form-input" id="pointsReason" placeholder="请输入原因（选填）">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('pointsModal')">取消</button>
+                <button class="btn btn-primary" id="pointsConfirmBtn">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录弹窗 -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">历史记录</div>
+                <button class="close-btn" onclick="closeModal('historyModal')">×</button>
+            </div>
+            <ul class="history-list" id="historyList">
+                <!-- 历史记录将在这里渲染 -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div class="modal" id="deleteKidModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">确认删除</div>
+                <button class="close-btn" onclick="closeModal('deleteKidModal')">×</button>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p style="margin-bottom: 20px; font-size: 16px;">确定要删除 <strong id="deleteKidName" style="color: #e74c3c;"></strong> 吗？</p>
+                <p style="color: #999; font-size: 14px; margin-bottom: 20px;">此操作不可恢复，所有积分历史将被删除</p>
+                <button class="btn btn-danger" style="width: 100%; margin-bottom: 10px;" onclick="deleteKid()">确认删除</button>
+                <button class="btn" style="width: 100%;" onclick="closeModal('deleteKidModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase 配置
+        const SUPABASE_URL = 'https://jjapnufndavlbtmqyufn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXBudWZuZGF2bGJ0bXF5dWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDk3OTMsImV4cCI6MjA4ODUyNTc5M30.yXciuHKpUe2PumtLCDGiCf-SepQqoHBTmPloXizwpbI';
+
+        // 使用 window.supabase 全局对象创建客户端
+        // 避免使用 'supabase' 作为变量名以防止与全局对象冲突
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUser = null;
+        let currentKidId = null;
+        let currentAction = null;
+
+        // 初始化
+        async function init() {
+            console.log('应用初始化...');
+            // 直接显示登录界面，让用户输入昵称
+            showLogin();
+        }
+
+        // 匿名登录
+        async function anonymousLogin() {
+            const nickname = document.getElementById('nicknameInput').value.trim();
+
+            if (!nickname) {
+                alert('请输入昵称');
+                return;
+            }
+
+            try {
+                console.log('登录,昵称:', nickname);
+
+                // 使用昵称作为用户标识
+                currentUser = { id: nickname, nickname: nickname };
+                
+                // 保存昵称到localStorage
+                localStorage.setItem('user_nickname', nickname);
+
+                console.log('登录成功,昵称:', nickname);
+
+                showMain();
+                loadKids();
+            } catch (err) {
+                console.error('登录异常:', err);
+                alert('登录失败: ' + err.message);
+            }
+        }
+
+        // 显示登录界面
+        function showLogin() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('mainSection').style.display = 'none';
+        }
+
+        // 显示主界面
+        function showMain() {
+            const loginSection = document.getElementById('loginSection');
+            const mainSection = document.getElementById('mainSection');
+            
+            // 强制隐藏登录页
+            loginSection.style.display = 'none';
+            loginSection.style.visibility = 'hidden';
+            
+            // 强制显示主界面
+            mainSection.style.display = 'block';
+            mainSection.style.visibility = 'visible';
+            mainSection.style.opacity = '1';
+            
+            // 强制浏览器重新布局（解决 Android 兼容性问题）
+            mainSection.offsetHeight; // 触发重绘
+            
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+
+            const nickname = currentUser?.nickname || '家长';
+            document.getElementById('userName').textContent = nickname;
+            document.getElementById('userAvatar').textContent = nickname.charAt(0);
+            document.getElementById('displayUsername').textContent = nickname;
+            document.getElementById('parentName').value = nickname;
+        }
+
+        // 退出登录
+        async function logout() {
+            if (!confirm('确定要退出登录吗？')) return;
+            currentUser = null;
+            localStorage.removeItem('user_nickname');
+            showLogin();
+        }
+
+        // 加载小朋友列表
+        async function loadKids() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('kidsList').innerHTML = '';
+            document.getElementById('emptyState').style.display = 'none';
+
+            try {
+                const parentId = currentUser.nickname;
+                console.log('开始查询数据库，parentId:', parentId);
+                
+                const { data, error } = await db
+                    .from('kids')
+                    .select('*')
+                    .eq('parent_id', parentId)
+                    .order('created_at', { ascending: false });
+
+                console.log('数据库查询结果:', data, error);
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (error) {
+                    console.error('加载失败:', error);
+                    alert('加载失败: ' + error.message);
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                renderKids(data);
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                console.error('加载异常:', err);
+                alert('加载失败: ' + err.message);
+            }
+        }
+
+        // 切换 Tab
+        function switchTab(tab) {
+            // 切换按钮状态
+            document.getElementById('tabKids').classList.remove('active');
+            document.getElementById('tabRanking').classList.remove('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+
+            // 切换内容显示
+            document.getElementById('kidsTabContent').classList.remove('active');
+            document.getElementById('rankingTabContent').classList.remove('active');
+            document.getElementById(tab + 'TabContent').classList.add('active');
+
+            // 根据选择的 Tab 加载对应数据
+            if (tab === 'kids') {
+                loadKids();
+            } else if (tab === 'ranking') {
+                loadRanking();
+            }
+        }
+
+        // 排名缓存
+        let rankingCache = {
+            data: null,
+            timestamp: 0,
+            parentId: null
+        };
+        const CACHE_EXPIRE_MS = 30000; // 缓存30秒
+
+        // 加载积分排名
+        async function loadRanking(forceRefresh = false) {
+            const rankingList = document.getElementById('rankingList');
+            const rankingEmpty = document.getElementById('rankingEmpty');
+            
+            // 显示 loading
+            rankingList.innerHTML = '<div class="loading">加载中...</div>';
+            rankingEmpty.style.display = 'none';
+
+            try {
+                const parentId = currentUser.nickname;
+                const now = Date.now();
+
+                // 检查缓存是否有效（30秒内，且 parentId 相同）
+                if (!forceRefresh && 
+                    rankingCache.data && 
+                    rankingCache.parentId === parentId &&
+                    (now - rankingCache.timestamp) < CACHE_EXPIRE_MS) {
+                    console.log('使用缓存的排名数据');
+                    renderRanking(rankingCache.data);
+                    return;
+                }
+
+                console.log('开始查询排名数据，parentId:', parentId);
+
+                // 只查询需要的字段，提升性能
+                const { data, error } = await db
+                    .from('kids')
+                    .select('id, name, total_points')
+                    .eq('parent_id', parentId)
+                    .order('total_points', { ascending: false });
+
+                console.log('排名查询结果:', data, error);
+
+                if (error) {
+                    rankingList.innerHTML = '';
+                    console.error('加载排名失败:', error);
+                    alert('加载排名失败: ' + error.message);
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    rankingList.innerHTML = '';
+                    rankingEmpty.style.display = 'block';
+                    return;
+                }
+
+                // 更新缓存
+                rankingCache = {
+                    data: data,
+                    timestamp: now,
+                    parentId: parentId
+                };
+
+                renderRanking(data);
+            } catch (err) {
+                rankingList.innerHTML = '';
+                console.error('加载排名异常:', err);
+                alert('加载排名失败: ' + err.message);
+            }
+        }
+
+        // 渲染排名列表
+        function renderRanking(kids) {
+            const rankingList = document.getElementById('rankingList');
+
+            rankingList.innerHTML = kids.map((kid, index) => {
+                const rank = index + 1;
+                let rankClass = 'rank-other';
+                if (rank === 1) rankClass = 'rank-1';
+                else if (rank === 2) rankClass = 'rank-2';
+                else if (rank === 3) rankClass = 'rank-3';
+
+                return `
+                    <div class="ranking-item">
+                        <div class="rank-badge ${rankClass}">${rank}</div>
+                        <div class="ranking-avatar">${kid.name.charAt(0)}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-name">${kid.name}</div>
+                        </div>
+                        <div class="ranking-points">${kid.total_points} 分</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染小朋友列表
+        function renderKids(kids) {
+            const kidsList = document.getElementById('kidsList');
+
+            kidsList.innerHTML = kids.map(kid => `
+                <div class="kid-card">
+                    <div class="kid-header">
+                        <div>
+                            <div class="kid-name">${escapeHtml(kid.name)}</div>
+                            <div class="parent-name">当前积分</div>
+                        </div>
+                        <div class="kid-points">${kid.total_points}分</div>
+                    </div>
+                    <div class="kid-actions">
+                        <button class="action-btn add-points" onclick="openPointsModal('${kid.id}', 'add')">➕ 加分</button>
+                        <button class="action-btn subtract-points" onclick="openPointsModal('${kid.id}', 'subtract')">➖ 减分</button>
+                        <button class="action-btn exchange-points" onclick="openPointsModal('${kid.id}', 'exchange')">🎁 兑换积分</button>
+                        <button class="action-btn history-btn" onclick="openHistoryModal('${kid.id}')">📜 历史</button>
+                        <button class="action-btn delete-btn" onclick="confirmDeleteKid('${kid.id}', '${escapeHtml(kid.name)}')">🗑️ 删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 打开添加小朋友弹窗
+        function openAddKidModal() {
+            document.getElementById('kidName').value = '';
+            document.getElementById('initialPoints').value = '0';
+            document.getElementById('kidCode').value = '';
+            document.getElementById('addKidModal').classList.add('active');
+        }
+
+        // 添加小朋友
+        async function addKid() {
+            const name = document.getElementById('kidName').value.trim();
+            const initialPoints = parseInt(document.getElementById('initialPoints').value) || 0;
+            const kidCode = document.getElementById('kidCode').value.trim();
+
+            if (!name) {
+                alert('请输入小朋友的名字');
+                return;
+            }
+
+            // 验证关联码
+            if (kidCode && (kidCode.length !== 6 || !/^\d{6}$/.test(kidCode))) {
+                alert('关联码必须是6位数字');
+                return;
+            }
+
+            const parentId = currentUser.nickname;
+            console.log('当前用户:', currentUser);
+            console.log('使用的parentId:', parentId);
+            
+            const history = initialPoints > 0 ? [{
+                type: 'add',
+                points: initialPoints,
+                reason: '初始积分',
+                parentName: currentUser.nickname || '家长',
+                time: new Date().toLocaleString('zh-CN')
+            }] : [];
+
+            try {
+                console.log('开始添加数据:', { name, total_points: initialPoints, parent_id: parentId, kid_code: kidCode });
+                
+                const { data, error } = await db
+                    .from('kids')
+                    .insert({
+                        name: name,
+                        total_points: initialPoints,
+                        parent_id: parentId,
+                        history: history,
+                        kid_code: kidCode || null
+                    })
+                    .select();
+
+                console.log('添加结果:', data, error);
+
+                if (error) {
+                    alert('添加失败: ' + error.message);
+                    return;
+                }
+
+                closeModal('addKidModal');
+                
+                // 清空表单
+                document.getElementById('kidName').value = '';
+                document.getElementById('initialPoints').value = '0';
+                document.getElementById('kidCode').value = '';
+                
+                if (kidCode) {
+                    alert('添加成功！关联码是：' + kidCode + '，请将此码告诉其他家长');
+                } else {
+                    alert('添加成功！');
+                }
+                loadKids();
+            } catch (err) {
+                console.error('添加失败:', err);
+                alert('添加失败: ' + err.message);
+            }
+        }
+
+        // 打开关联小朋友弹窗
+        let linkKidId = null;
+
+        async function openLinkKidModal() {
+            // 重置状态
+            document.getElementById('linkKidCode').value = '';
+            document.getElementById('linkKidCodeSection').style.display = 'none';
+            document.getElementById('linkKidHint').style.display = 'block';
+            linkKidId = null;
+            
+            // 查询所有设置了关联码且不属于当前用户的小朋友
+            const parentId = currentUser.nickname;
+            
+            try {
+                const { data: allKids, error } = await db
+                    .from('kids')
+                    .select('*')
+                    .not('kid_code', 'is', null)
+                    .neq('parent_id', parentId);
+                
+                if (error) {
+                    alert('查询失败: ' + error.message);
+                    return;
+                }
+                
+                const select = document.getElementById('linkKidSelect');
+                select.innerHTML = '<option value="">-- 请选择 --</option>';
+                
+                if (allKids && allKids.length > 0) {
+                    allKids.forEach(kid => {
+                        const option = document.createElement('option');
+                        option.value = kid.id;
+                        option.textContent = kid.name;
+                        select.appendChild(option);
+                    });
+                    document.getElementById('linkKidHint').style.display = 'block';
+                } else {
+                    document.getElementById('linkKidHint').innerHTML = '<p style="font-size: 12px; color: #999; margin-bottom: 15px;">暂无可关联的小朋友</p><div class="btn-group"><button class="btn btn-secondary" onclick="closeModal(\'linkKidModal\')">关闭</button></div>';
+                    document.getElementById('linkKidHint').style.display = 'block';
+                }
+                
+                document.getElementById('linkKidModal').classList.add('active');
+                
+            } catch (err) {
+                console.error('查询失败:', err);
+                alert('查询失败: ' + err.message);
+            }
+        }
+
+        // 选择小朋友后直接显示关联码填写框
+        function onKidSelectChange() {
+            const select = document.getElementById('linkKidSelect');
+            const kidId = select.value;
+            
+            if (!kidId) {
+                document.getElementById('linkKidCodeSection').style.display = 'none';
+                document.getElementById('linkKidHint').style.display = 'block';
+                linkKidId = null;
+                return;
+            }
+            
+            linkKidId = kidId;
+            const kidName = select.options[select.selectedIndex].textContent;
+            
+            document.getElementById('linkKidNameDisplay').textContent = kidName;
+            document.getElementById('linkKidCode').value = '';
+            document.getElementById('linkKidHint').style.display = 'none';
+            document.getElementById('linkKidCodeSection').style.display = 'block';
+        }
+
+        // 确认关联
+        async function confirmLinkKid() {
+            const linkCode = document.getElementById('linkKidCode').value.trim();
+            
+            if (!linkCode) {
+                alert('请输入关联码');
+                return;
+            }
+            
+            if (linkCode.length !== 6 || !/^\d{6}$/.test(linkCode)) {
+                alert('关联码必须是6位数字');
+                return;
+            }
+            
+            if (!linkKidId) {
+                alert('请先选择小朋友');
+                return;
+            }
+            
+            const parentId = currentUser.nickname;
+            
+            try {
+                // 查找选择的小朋友并验证关联码
+                const { data: kids, error: searchError } = await db
+                    .from('kids')
+                    .select('*')
+                    .eq('id', linkKidId);
+                
+                if (searchError) {
+                    alert('查询失败: ' + searchError.message);
+                    return;
+                }
+                
+                if (!kids || kids.length === 0) {
+                    alert('未找到该小朋友');
+                    return;
+                }
+                
+                const kid = kids[0];
+                
+                // 验证关联码
+                if (kid.kid_code !== linkCode) {
+                    alert('关联码错误，请检查后重新输入');
+                    return;
+                }
+                
+                // 更新 parent_id
+                const { error: updateError } = await db
+                    .from('kids')
+                    .update({ parent_id: parentId })
+                    .eq('id', kid.id);
+                
+                if (updateError) {
+                    alert('关联失败: ' + updateError.message);
+                    return;
+                }
+                
+                closeModal('linkKidModal');
+                document.getElementById('linkKidCode').value = '';
+                document.getElementById('linkKidCodeSection').style.display = 'none';
+                document.getElementById('linkKidHint').style.display = 'block';
+                linkKidId = null;
+                
+                loadKids();
+                alert('关联成功！现在您可以管理 ' + kid.name + ' 了');
+                
+            } catch (err) {
+                console.error('关联失败:', err);
+                alert('关联失败: ' + err.message);
+            }
+        }
+
+        // 打开积分操作弹窗
+        function openPointsModal(kidId, action) {
+            currentKidId = kidId;
+            currentAction = action;
+
+            const kidName = document.querySelector(`button[onclick*="'${kidId}'"]`).closest('.kid-card').querySelector('.kid-name').textContent;
+
+            const titles = {
+                add: `给 ${kidName} 加分`,
+                subtract: `给 ${kidName} 减分`,
+                exchange: `用 ${kidName} 的积分兑换`
+            };
+
+            document.getElementById('pointsModalTitle').textContent = titles[action];
+            document.getElementById('pointsAmount').value = 1;
+            document.getElementById('pointsReason').value = '';
+
+            // 渲染快捷积分按钮
+            const quickPointsBtns = document.getElementById('quickPointsBtns');
+            const quickPoints = action === 'exchange' ? [10, 20, 50, 100] : [1, 5, 10, 20];
+            quickPointsBtns.innerHTML = quickPoints.map(p => `
+                <button class="quick-point-btn" onclick="setPointsAmount(${p})">${p}分</button>
+            `).join('');
+
+            document.getElementById('pointsConfirmBtn').onclick = () => confirmPoints();
+            document.getElementById('pointsModal').classList.add('active');
+        }
+
+        // 设置积分数量
+        function setPointsAmount(amount) {
+            document.getElementById('pointsAmount').value = amount;
+        }
+
+        // 确认积分操作
+        async function confirmPoints() {
+            const kidId = currentKidId;
+            const parentName = document.getElementById('parentName').value.trim() || currentUser?.nickname || '家长';
+            const points = parseInt(document.getElementById('pointsAmount').value) || 0;
+            const reason = document.getElementById('pointsReason').value.trim();
+
+            if (points <= 0) {
+                alert('请输入有效的积分数量');
+                return;
+            }
+
+            // 先查询当前积分
+            console.log('查询小朋友数据，ID:', kidId);
+            const { data: kids, error: queryError } = await db
+                .from('kids')
+                .select('*')
+                .eq('id', kidId);
+            
+            console.log('查询结果:', kids, queryError);
+            
+            if (queryError || !kids || kids.length === 0) {
+                alert('查询失败: ' + (queryError?.message || '未知错误'));
+                return;
+            }
+
+            const kid = kids[0];
+
+            if ((currentAction === 'subtract' || currentAction === 'exchange') && points > kid.total_points) {
+                alert('积分不足');
+                return;
+            }
+
+            let pointChange = 0;
+            let type = '';
+            let actionText = '';
+
+            if (currentAction === 'add') {
+                pointChange = points;
+                type = 'add';
+                actionText = '加分';
+            } else if (currentAction === 'subtract') {
+                pointChange = -points;
+                type = 'subtract';
+                actionText = '减分';
+            } else if (currentAction === 'exchange') {
+                pointChange = -points;
+                type = 'exchange';
+                actionText = '兑换';
+            }
+
+            const newTotalPoints = kid.total_points + pointChange;
+            const newHistory = [...(kid.history || []), {
+                type: type,
+                points: points,
+                reason: reason || actionText,
+                parentName: parentName,
+                time: new Date().toLocaleString('zh-CN')
+            }];
+
+            try {
+                console.log('更新数据:', { total_points: newTotalPoints, historyLength: newHistory.length });
+                const { error: updateError } = await db
+                    .from('kids')
+                    .update({
+                        total_points: newTotalPoints,
+                        history: newHistory
+                    })
+                    .eq('id', kidId);
+
+                console.log('更新结果:', updateError);
+
+                if (updateError) {
+                    alert('操作失败: ' + updateError.message);
+                    return;
+                }
+
+                closeModal('pointsModal');
+                loadKids();
+
+                // 如果当前在排名页，也刷新排名（强制刷新缓存）
+                if (document.getElementById('tabRanking').classList.contains('active')) {
+                    loadRanking(true);
+                }
+
+                const message = type === 'add'
+                    ? `已给 ${kid.name} 加 ${points} 分!`
+                    : `已${actionText} ${points} 分!`;
+                alert(message);
+            } catch (err) {
+                console.error('操作失败:', err);
+                alert('操作失败: ' + err.message);
+            }
+        }
+
+        // 删除小朋友相关变量
+        let kidToDeleteId = null;
+
+        // 打开删除确认弹窗
+        function confirmDeleteKid(kidId, kidName) {
+            kidToDeleteId = kidId;
+            document.getElementById('deleteKidName').textContent = kidName;
+            document.getElementById('deleteKidModal').classList.add('active');
+        }
+
+        // 删除小朋友
+        async function deleteKid() {
+            if (!kidToDeleteId) {
+                alert('删除失败：未找到要删除的小朋友');
+                return;
+            }
+
+            try {
+                const { error: deleteError } = await db
+                    .from('kids')
+                    .delete()
+                    .eq('id', kidToDeleteId);
+
+                if (deleteError) {
+                    alert('删除失败: ' + deleteError.message);
+                    return;
+                }
+
+                closeModal('deleteKidModal');
+                loadKids();
+
+                // 如果当前在排名页，也刷新排名（强制刷新缓存）
+                if (document.getElementById('tabRanking').classList.contains('active')) {
+                    loadRanking(true);
+                }
+
+                alert('删除成功');
+                kidToDeleteId = null;
+            } catch (err) {
+                console.error('删除失败:', err);
+                alert('删除失败: ' + err.message);
+            }
+        }
+
+        // 打开历史记录弹窗
+        async function openHistoryModal(kidId) {
+            const { data: kids, error } = await db
+                .from('kids')
+                .select('*')
+                .eq('id', kidId);
+                
+            if (error || !kids || kids.length === 0) {
+                alert('查询失败: ' + (error?.message || '未知错误'));
+                return;
+            }
+
+            const kid = kids[0];
+            const historyList = document.getElementById('historyList');
+
+            if (!kid.history || kid.history.length === 0) {
+                historyList.innerHTML = '<li style="text-align: center; padding: 20px; color: #999;">暂无历史记录</li>';
+            } else {
+                historyList.innerHTML = kid.history.map(record => {
+                    const typeLabels = {
+                        add: { text: '加分', className: 'add' },
+                        subtract: { text: '减分', className: 'subtract' },
+                        exchange: { text: '兑换', className: 'exchange' }
+                    };
+                    const typeInfo = typeLabels[record.type];
+                    const pointSign = record.type === 'add' ? '+' : '-';
+
+                    return `
+                        <li class="history-item">
+                            <div class="history-info">
+                                <div class="history-action">${escapeHtml(record.parentName)} - ${typeInfo.text}</div>
+                                <div class="history-reason">${escapeHtml(record.reason)}</div>
+                                <div class="history-time">${record.time}</div>
+                            </div>
+                            <div class="history-points ${typeInfo.className}">${pointSign}${record.points}</div>
+                        </li>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('historyModal').classList.add('active');
+        }
+
+        // 关闭弹窗
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 转义HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 点击遮罩层关闭弹窗
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
