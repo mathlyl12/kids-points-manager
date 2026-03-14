@@ -845,8 +845,22 @@
 
         // 显示主界面
         function showMain() {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainSection').style.display = 'block';
+            const loginSection = document.getElementById('loginSection');
+            const mainSection = document.getElementById('mainSection');
+            
+            // 强制隐藏登录页
+            loginSection.style.display = 'none';
+            loginSection.style.visibility = 'hidden';
+            
+            // 强制显示主界面
+            mainSection.style.display = 'block';
+            mainSection.style.visibility = 'visible';
+            mainSection.style.opacity = '1';
+            
+            // 强制浏览器重新布局（解决 Android 兼容性问题）
+            mainSection.offsetHeight; // 触发重绘
+            
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
             const nickname = currentUser?.nickname || '家长';
             document.getElementById('userName').textContent = nickname;
@@ -873,10 +887,12 @@
                 const parentId = currentUser.nickname;
                 console.log('开始查询数据库，parentId:', parentId);
                 
+                // 查询自己创建的或关联的小朋友
+                // parent_id 包含当前用户（模糊匹配），或者 creator_id 是当前用户
                 const { data, error } = await db
                     .from('kids')
                     .select('*')
-                    .eq('parent_id', parentId)
+                    .or(`parent_id.like.*${parentId}%,creator_id.eq.${parentId}`)
                     .order('created_at', { ascending: false });
 
                 console.log('数据库查询结果:', data, error);
@@ -955,11 +971,12 @@
 
                 console.log('开始查询排名数据，parentId:', parentId);
 
-                // 只查询需要的字段，提升性能
+                // 查询自己创建的和自己关联的小朋友
+                // parent_id 包含当前用户（模糊匹配），或者 creator_id 是当前用户
                 const { data, error } = await db
                     .from('kids')
                     .select('id, name, total_points')
-                    .eq('parent_id', parentId)
+                    .or(`parent_id.like.*${parentId}%,creator_id.eq.${parentId}`)
                     .order('total_points', { ascending: false });
 
                 console.log('排名查询结果:', data, error);
@@ -1068,17 +1085,9 @@
             const parentId = currentUser.nickname;
             console.log('当前用户:', currentUser);
             console.log('使用的parentId:', parentId);
-            
-            const history = initialPoints > 0 ? [{
-                type: 'add',
-                points: initialPoints,
-                reason: '初始积分',
-                parentName: currentUser.nickname || '家长',
-                time: new Date().toLocaleString('zh-CN')
-            }] : [];
 
             try {
-                console.log('开始添加数据:', { name, total_points: initialPoints, parent_id: parentId, kid_code: kidCode });
+                console.log('开始添加数据:', { name, total_points: initialPoints, parent_id: parentId, kid_code: kidCode, creator_id: parentId });
                 
                 const { data, error } = await db
                     .from('kids')
@@ -1086,17 +1095,36 @@
                         name: name,
                         total_points: initialPoints,
                         parent_id: parentId,
-                        history: history,
+                        creator_id: parentId,
                         kid_code: kidCode || null
                     })
                     .select();
-
-                console.log('添加结果:', data, error);
 
                 if (error) {
                     alert('添加失败: ' + error.message);
                     return;
                 }
+
+                const newKid = data[0];
+
+                // 如果有初始积分，写入历史记录表
+                if (initialPoints > 0) {
+                    const { error: historyError } = await db
+                        .from('point_history')
+                        .insert({
+                            kid_id: newKid.id,
+                            type: 'add',
+                            points: initialPoints,
+                            reason: '初始积分',
+                            parent_name: parentId
+                        });
+
+                    if (historyError) {
+                        console.error('写入历史记录失败:', historyError);
+                    }
+                }
+
+                console.log('添加结果:', data, error);
 
                 closeModal('addKidModal');
                 
@@ -1233,10 +1261,21 @@
                     return;
                 }
                 
-                // 更新 parent_id
+                // 检查是否已经关联过
+                const existingParents = kid.parent_id ? kid.parent_id.split(',') : [];
+                if (existingParents.includes(parentId)) {
+                    alert('您已经关联过该小朋友了');
+                    return;
+                }
+                
+                // 追加到家长列表（用逗号分隔）
+                const newParentId = existingParents.length > 0 
+                    ? kid.parent_id + ',' + parentId 
+                    : parentId;
+                
                 const { error: updateError } = await db
                     .from('kids')
-                    .update({ parent_id: parentId })
+                    .update({ parent_id: newParentId })
                     .eq('id', kid.id);
                 
                 if (updateError) {
@@ -1320,7 +1359,8 @@
 
             const kid = kids[0];
 
-            if ((currentAction === 'subtract' || currentAction === 'exchange') && points > kid.total_points) {
+            // 兑换需要检查积分是否足够，扣分可以扣到负分
+            if (currentAction === 'exchange' && points > kid.total_points) {
                 alert('积分不足');
                 return;
             }
@@ -1344,21 +1384,15 @@
             }
 
             const newTotalPoints = kid.total_points + pointChange;
-            const newHistory = [...(kid.history || []), {
-                type: type,
-                points: points,
-                reason: reason || actionText,
-                parentName: parentName,
-                time: new Date().toLocaleString('zh-CN')
-            }];
 
             try {
-                console.log('更新数据:', { total_points: newTotalPoints, historyLength: newHistory.length });
+                console.log('更新数据:', { total_points: newTotalPoints });
+                
+                // 更新积分
                 const { error: updateError } = await db
                     .from('kids')
                     .update({
-                        total_points: newTotalPoints,
-                        history: newHistory
+                        total_points: newTotalPoints
                     })
                     .eq('id', kidId);
 
@@ -1367,6 +1401,21 @@
                 if (updateError) {
                     alert('操作失败: ' + updateError.message);
                     return;
+                }
+
+                // 写入历史记录表
+                const { error: historyError } = await db
+                    .from('point_history')
+                    .insert({
+                        kid_id: kidId,
+                        type: type,
+                        points: currentAction === 'add' ? points : -points,
+                        reason: reason || actionText,
+                        parent_name: parentName
+                    });
+
+                if (historyError) {
+                    console.error('写入历史记录失败:', historyError);
                 }
 
                 closeModal('pointsModal');
@@ -1404,7 +1453,29 @@
                 return;
             }
 
+            const parentId = currentUser.nickname;
+
             try {
+                // 先查询小朋友的创建者
+                const { data: kids, error: queryError } = await db
+                    .from('kids')
+                    .select('*')
+                    .eq('id', kidToDeleteId);
+
+                if (queryError || !kids || kids.length === 0) {
+                    alert('查询失败');
+                    return;
+                }
+
+                const kid = kids[0];
+
+                // 检查是否是创建者
+                if (kid.creator_id !== parentId) {
+                    alert('只有创建者才能删除小朋友');
+                    return;
+                }
+
+                // 执行删除
                 const { error: deleteError } = await db
                     .from('kids')
                     .delete()
@@ -1433,23 +1504,24 @@
 
         // 打开历史记录弹窗
         async function openHistoryModal(kidId) {
-            const { data: kids, error } = await db
-                .from('kids')
+            // 从历史记录表读取数据
+            const { data: historyRecords, error } = await db
+                .from('point_history')
                 .select('*')
-                .eq('id', kidId);
+                .eq('kid_id', kidId)
+                .order('created_at', { ascending: false });
                 
-            if (error || !kids || kids.length === 0) {
-                alert('查询失败: ' + (error?.message || '未知错误'));
+            if (error) {
+                alert('查询失败: ' + error.message);
                 return;
             }
 
-            const kid = kids[0];
             const historyList = document.getElementById('historyList');
 
-            if (!kid.history || kid.history.length === 0) {
+            if (!historyRecords || historyRecords.length === 0) {
                 historyList.innerHTML = '<li style="text-align: center; padding: 20px; color: #999;">暂无历史记录</li>';
             } else {
-                historyList.innerHTML = kid.history.map(record => {
+                historyList.innerHTML = historyRecords.map(record => {
                     const typeLabels = {
                         add: { text: '加分', className: 'add' },
                         subtract: { text: '减分', className: 'subtract' },
@@ -1461,11 +1533,11 @@
                     return `
                         <li class="history-item">
                             <div class="history-info">
-                                <div class="history-action">${escapeHtml(record.parentName)} - ${typeInfo.text}</div>
-                                <div class="history-reason">${escapeHtml(record.reason)}</div>
-                                <div class="history-time">${record.time}</div>
+                                <div class="history-action">${escapeHtml(record.parent_name || '')} - ${typeInfo.text}</div>
+                                <div class="history-reason">${escapeHtml(record.reason || '')}</div>
+                                <div class="history-time">${record.created_at ? new Date(record.created_at).toLocaleString('zh-CN') : ''}</div>
                             </div>
-                            <div class="history-points ${typeInfo.className}">${pointSign}${record.points}</div>
+                            <div class="history-points ${typeInfo.className}">${pointSign}${Math.abs(record.points)}</div>
                         </li>
                     `;
                 }).join('');

@@ -888,11 +888,11 @@
                 console.log('开始查询数据库，parentId:', parentId);
                 
                 // 查询自己创建的或关联的小朋友
-                // parent_id 可能是 "家长A" 或 "家长A,家长B,家长C"
+                // parent_id 包含当前用户（模糊匹配），或者 creator_id 是当前用户
                 const { data, error } = await db
                     .from('kids')
                     .select('*')
-                    .or(`parent_id.eq.${parentId},parent_id.like.%${parentId}%`)
+                    .or(`parent_id.like.*${parentId}%,creator_id.eq.${parentId}`)
                     .order('created_at', { ascending: false });
 
                 console.log('数据库查询结果:', data, error);
@@ -971,11 +971,12 @@
 
                 console.log('开始查询排名数据，parentId:', parentId);
 
-                // 只查询需要的字段，提升性能
+                // 查询自己创建的和自己关联的小朋友
+                // parent_id 包含当前用户（模糊匹配），或者 creator_id 是当前用户
                 const { data, error } = await db
                     .from('kids')
                     .select('id, name, total_points')
-                    .eq('parent_id', parentId)
+                    .or(`parent_id.like.*${parentId}%,creator_id.eq.${parentId}`)
                     .order('total_points', { ascending: false });
 
                 console.log('排名查询结果:', data, error);
