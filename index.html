@@ -805,8 +805,18 @@
         // 初始化
         async function init() {
             console.log('应用初始化...');
-            // 直接显示登录界面，让用户输入昵称
-            showLogin();
+            
+            // 检查是否有缓存的昵称，实现自动登录
+            const savedNickname = localStorage.getItem('user_nickname');
+            if (savedNickname) {
+                console.log('发现缓存的昵称，自动登录:', savedNickname);
+                currentUser = { id: savedNickname, nickname: savedNickname };
+                showMain();
+                loadKids();
+            } else {
+                // 没有缓存，显示登录界面
+                showLogin();
+            }
         }
 
         // 匿名登录
@@ -839,8 +849,21 @@
 
         // 显示登录界面
         function showLogin() {
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('mainSection').style.display = 'none';
+            const loginSection = document.getElementById('loginSection');
+            const mainSection = document.getElementById('mainSection');
+            
+            // 重置所有样式，确保登录界面正常显示
+            loginSection.style.display = 'block';
+            loginSection.style.visibility = 'visible';
+            
+            mainSection.style.display = 'none';
+            mainSection.style.visibility = 'hidden';
+            
+            // 读取缓存的昵称并自动填充
+            const savedNickname = localStorage.getItem('user_nickname');
+            if (savedNickname) {
+                document.getElementById('nicknameInput').value = savedNickname;
+            }
         }
 
         // 显示主界面
@@ -1404,15 +1427,6 @@
                 }
 
                 // 写入历史记录表
-                console.log('准备写入历史记录:', {
-                    kid_id: kidId,
-                    kid_id_type: typeof kidId,
-                    type: type,
-                    points: currentAction === 'add' ? points : -points,
-                    reason: reason || actionText,
-                    parent_name: parentName
-                });
-                
                 const { error: historyError } = await db
                     .from('point_history')
                     .insert({
@@ -1425,8 +1439,7 @@
 
                 if (historyError) {
                     console.error('写入历史记录失败:', historyError);
-                } else {
-                    console.log('历史记录写入成功');
+                    alert('历史记录写入失败: ' + historyError.message);
                 }
 
                 closeModal('pointsModal');
@@ -1521,7 +1534,7 @@
                 .select('*')
                 .eq('kid_id', kidId)
                 .order('created_at', { ascending: false });
-                
+
             if (error) {
                 alert('查询失败: ' + error.message);
                 return;

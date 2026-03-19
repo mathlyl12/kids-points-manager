@@ -1404,6 +1404,15 @@
                 }
 
                 // 写入历史记录表
+                console.log('准备写入历史记录:', {
+                    kid_id: kidId,
+                    kid_id_type: typeof kidId,
+                    type: type,
+                    points: currentAction === 'add' ? points : -points,
+                    reason: reason || actionText,
+                    parent_name: parentName
+                });
+                
                 const { error: historyError } = await db
                     .from('point_history')
                     .insert({
@@ -1416,6 +1425,8 @@
 
                 if (historyError) {
                     console.error('写入历史记录失败:', historyError);
+                } else {
+                    console.log('历史记录写入成功');
                 }
 
                 closeModal('pointsModal');
